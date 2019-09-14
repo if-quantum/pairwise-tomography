@@ -11,7 +11,6 @@ from qiskit.result import Result
 from qiskit import QuantumCircuit
 
 from itertools import combinations, product
-from tqdm import tqdm
 
 class PairwiseStateTomographyFitter(StateTomographyFitter):
     """
@@ -61,7 +60,7 @@ class PairwiseStateTomographyFitter(StateTomographyFitter):
 
         result = {}
 
-        for p in tqdm(pairs_list):
+        for p in pairs_list:
             result[p] = self.fit_ij(*p, **kwargs)
 
         return result
