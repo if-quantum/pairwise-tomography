@@ -15,4 +15,4 @@ python setup.py install
 ```
 
 ## Usage
-Check the tutorial notebook [docs/pairwise-tomography-tutorial.ipynb](pairwise-tomography-tutorial.ipynb)
+Check the tutorial notebook [pairwise-tomography-tutorial.ipynb](docs/pairwise-tomography-tutorial.ipynb)
