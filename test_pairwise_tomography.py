@@ -1,13 +1,12 @@
 import pytest 
 
-from if_quantum.pairwise_state_tomography_circuits import pairwise_state_tomography_circuits
-from if_quantum.pairwise_fitter import PairwiseStateTomographyFitter
+from pairwise_tomography.pairwise_state_tomography_circuits import pairwise_state_tomography_circuits
+from pairwise_tomography.pairwise_fitter import PairwiseStateTomographyFitter
 
 from qiskit import QuantumCircuit, QuantumRegister
 from qiskit import execute
 from qiskit import Aer
 
-from if_quantum.utils import concurrence
 from qiskit.quantum_info import state_fidelity
 from qiskit.tools.qi.qi import partial_trace
 import numpy as np
