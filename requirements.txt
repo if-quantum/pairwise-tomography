@@ -1,0 +1,4 @@
+qiskit>=0.12
+networkx
+matplotlib
+scipy
