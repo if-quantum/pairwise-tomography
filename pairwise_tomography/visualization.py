@@ -16,8 +16,8 @@ def make_graph(ent_dict, qubit_list):
                 
     return G
 
-def draw_ent_graph(ent_dict, qubit_list, layout="circular", **kwargs):
-    G=make_graph(ent_dict,qubit_list)
+def draw_entanglement_graph(ent_dict, qubit_list, layout="circular", **kwargs):
+    G = make_graph(ent_dict,qubit_list)
     valid_layout = {"circular","spring"}
     if layout not in valid_layout:
             raise ValueError("Not a valid layout name (circular,spring).")
@@ -26,11 +26,12 @@ def draw_ent_graph(ent_dict, qubit_list, layout="circular", **kwargs):
         pos = nx.circular_layout(G, dim=2, scale=1, center=None)
     if layout == "spring":
         pos = nx.spring_layout(G)
+    
     edgewidth = [d['weight'] for (u,v,d) in G.edges(data=True)]
     nodesize = [e[1]*100 for e in G.degree(weight='weight')]
-    print(nodesize)
+    
     plt.figure(1)
     plt.axis('off')
-    nx.draw_networkx_nodes(G, pos, node_size=nodesize, node_color="red",edgecolors="black")
-    nx.draw_networkx_edges(G, pos, width=edgewidth)
-    nx.draw_networkx_labels(G,pos)
+    nx.draw_networkx_nodes(G, pos, node_size=nodesize, node_color="red", edgecolors="black", **kwargs)
+    nx.draw_networkx_edges(G, pos, width=edgewidth, **kwargs)
+    nx.draw_networkx_labels(G, pos, **kwargs)
