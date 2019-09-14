@@ -11,7 +11,7 @@ git clone https://github.com/if-quantum/pairwise-tomography.git
 
 Install with
 ```
-python setup.py install
+pip install pairwise-tomography
 ```
 
 ## Usage
