@@ -1,5 +1,5 @@
 # pairwise_tomography
-Efficient pairwise tomography for qiskit circuits
+Efficient pairwise tomography for [qiskit](https://github.com/Qiskit/qiskit) circuits.
 
 
 ## Installation
