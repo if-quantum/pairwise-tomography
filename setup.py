@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='pairwise-tomography',
-      install_requires=['qiskit>=0.12', 'scipy', 'matplotlib', 'networkx'], # And any other dependencies foo needs
+      install_requires=['qiskit>=0.12', 'scipy', 'matplotlib', 'networkx'],
       version='0.0.1',
       packages=[package for package in find_packages()
                 if package.startswith('pairwise_tomography')]
