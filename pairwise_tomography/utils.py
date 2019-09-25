@@ -1,9 +1,12 @@
+"""
+Utility functions
+"""
+
 import numpy as np
-from qiskit.tools.qi.qi import outer
 import scipy.linalg as la
 from scipy.optimize import minimize
 #from scipy.special import xlogy
-from qiskit.tools.qi.qi import partial_trace, entropy, mutual_information
+from qiskit.tools.qi.qi import outer, partial_trace, entropy, mutual_information
 
 def concurrence(state):
     """Calculate the concurrence.
@@ -40,7 +43,7 @@ def n_vector(theta, phi):
     """
     Unit vector for the specified direction
     """
-    
+
     n = np.array([np.sin(theta)*np.cos(phi), np.sin(theta)*np.sin(phi), np.cos(theta)])
     return n
 
@@ -63,19 +66,19 @@ def projective_measurement(theta, phi, qubit=0):
     for i in range(3):
         Pi1 += 0.5 * n[i] * _paulis[i+1]
         Pi2 -= 0.5 * n[i] * _paulis[i+1]
-    
+
     if qubit==0:
         Pi1 = np.kron(_s0, Pi1)
         Pi2 = np.kron(_s0, Pi2)
     else:
         Pi1 = np.kron(Pi1, _s0)
         Pi2 = np.kron(Pi2, _s0)
-    
+
     measurement = [Pi1, Pi2]
     return measurement
 
 def quantum_conditional_entropy(rho, theta, phi, qubit=0):
-    """
+    r"""
     The quantum conditional entropy for a two-qubit state, 
     with a projective measurement in the specified direction
     
