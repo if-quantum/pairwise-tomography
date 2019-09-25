@@ -78,7 +78,7 @@ def projective_measurement(theta, phi, qubit=0):
     return measurement
 
 def quantum_conditional_entropy(rho, theta, phi, qubit=0):
-    r"""
+    """
     The quantum conditional entropy for a two-qubit state, 
     with a projective measurement in the specified direction
     
@@ -86,10 +86,10 @@ def quantum_conditional_entropy(rho, theta, phi, qubit=0):
 
     .. math::
     
-        \sum_k p_k S(\rho_k^B)
+        \\sum_k p_k S(\\rho_k^B)
     
-    where p_k is the probability of outcome k in the measurement, `\rho_k^B` is the
-    reduced state of the non-measured qubit after the measurement, and S(\rho) is the
+    where p_k is the probability of outcome k in the measurement, `\\rho_k^B` is the
+    reduced state of the non-measured qubit after the measurement, and S(\\rho) is the
     von-Neumann entropy (log in base 2).
     
     Args:
