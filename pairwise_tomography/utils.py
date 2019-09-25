@@ -1,8 +1,9 @@
 import numpy as np
 from qiskit.tools.qi.qi import outer
-from qiskit.tools.qi.qi import partial_trace
 import scipy.linalg as la
 from scipy.optimize import minimize
+#from scipy.special import xlogy
+from qiskit.tools.qi.qi import partial_trace, entropy, mutual_information
 
 def concurrence(state):
     """Calculate the concurrence.
@@ -29,87 +30,112 @@ def concurrence(state):
     return max(0.0, w[-1] - np.sum(w[0:-1]))
 
 
-class QDiscord():
+_s0 = np.array([[1, 0], [0, 1]], dtype=complex)
+_sx = np.array([[0, 1], [ 1, 0]], dtype=complex)
+_sy = np.array([[0, -1j], [1j, 0]], dtype=complex)
+_sz = np.array([[1, 0], [0, -1]], dtype=complex)
+_paulis = np.array([_s0, _sx, _sy, _sz])
+
+def n_vector(theta, phi):
     """
-    Class to calculate quantum discord and classical correlations
+    Unit vector for the specified direction
     """
-    def __init__(self):
-        self.paulikrons = self.get_pauli_kron_prods()
+    
+    n = np.array([np.sin(theta)*np.cos(phi), np.sin(theta)*np.sin(phi), np.cos(theta)])
+    return n
 
-    def get_pauli_kron_prods(self):
-        ## generates tensor products of Pauli matrices
-        # define Pauli matrices:
-        s0 = np.array([[1,0],[0,1]])
-        sx = np.array([[0, 1],[ 1, 0]])
-        sy = np.array([[0, -1j],[1j, 0]])
-        sz = np.array([[1, 0],[0, -1]])
-        paulis = np.array([s0,sx,sy,sz])
-
-        # initialize tensor product list
-        paulikrons = [[None for _ in range(4)] for __ in range(4)]
-        for k1 in range(4):
-            for k2 in range(4):
-                paulikrons[k1][k2] = np.kron(paulis[k1],paulis[k2])
+def projective_measurement(theta, phi, qubit=0):
+    """
+    Returns a projective measurement along the specified direction for one of
+    the two qubits.
+    
+    Args:
+        theta (float): "latitude" angle for the direction of the measurement
+        phi (float): "longitude" angle for the direction of the measurement
+        qubit (int): 0 or 1, the qubit on which the measurement is done (default 0)
         
-        return paulikrons
+    Returns:
+        list: The two measurement operators (numpy Arrays)
+    """
+    n = n_vector(theta, phi)
+    Pi1 = 0.5 * _s0
+    Pi2 = 0.5 * _s0
+    for i in range(3):
+        Pi1 += 0.5 * n[i] * _paulis[i+1]
+        Pi2 -= 0.5 * n[i] * _paulis[i+1]
+    
+    if qubit==0:
+        Pi1 = np.kron(_s0, Pi1)
+        Pi2 = np.kron(_s0, Pi2)
+    else:
+        Pi1 = np.kron(Pi1, _s0)
+        Pi2 = np.kron(Pi2, _s0)
+    
+    measurement = [Pi1, Pi2]
+    return measurement
 
-    def dm2cm(self, rho):
-        # density matrix to correlation matrix
-        corr_matrix = [[None for _ in range(4)] for __ in range(4)]
-        for k1 in range(4):
-            for k2 in range(4):
-                corr_matrix[k1][k2] = np.real(np.trace(rho @ self.paulikrons[k1][k2])) # @ is matrix multiplication in numpy
+def quantum_conditional_entropy(rho, theta, phi, qubit=0):
+    """
+    The quantum conditional entropy for a two-qubit state, 
+    with a projective measurement in the specified direction
+    
+    Evaluates the formula
 
-        return np.array(corr_matrix)
-
-    def discord(self, rho, minimize_discord = True, theta = np.pi/4., phi = np.pi/4.):
-        """
-        Calculates quantum discord and classical correlations on a 2-qubit state rho.
-        Returns a tuple
-        """
-
-        tau = np.array(self.dm2cm(rho))
-        a = tau[1:4, 0]
-        b = tau[0, 1:4].T 
-        R = tau[1:4,1:4]
+    .. math::
+    
+        \sum_k p_k S(\rho_k^B)
+    
+    where p_k is the probability of outcome k in the measurement, `\rho_k^B` is the
+    reduced state of the non-measured qubit after the measurement, and S(\rho) is the
+    von-Neumann entropy (log in base 2).
+    
+    Args:
+        rho (Array): a two-qubit density operator
+        theta (float): "latitude" angle for the direction of the measurement
+        phi (float): "longitude" angle for the direction of the measurement
+        qubit (int): 0 or 1, the qubit on which the measurement is done (default 0)
         
-        n = lambda theta, phi: [np.sin(theta)*np.cos(phi),
-                                np.sin(theta)*np.sin(phi),
-                                np.cos(theta)]
+    Returns:
+        float: the quantum conditional entropy
+    """
+    measurement = projective_measurement(theta, phi, qubit=qubit)
+    prob = np.array([np.real(np.trace(p @ rho)) for p in measurement])
+    rho_cond = [partial_trace(p @ rho @ p, [qubit]) for p in measurement]
+    rho_cond = [rho_cond[i] / prob[i] for i in range(len(prob))]
+    s_ent = np.array(list(map(entropy, rho_cond)))
+    return np.sum(prob * s_ent)
 
-        fn = lambda t, p: a @ n(t, p)
-        RTn = lambda t, p: R.T @ n(t, p)
-        gpn = lambda t, p: np.linalg.norm(b + RTn(t, p))
-        gmn = lambda t, p: np.linalg.norm(b - RTn(t, p))
+def classical_correlation(rho, qubit=0):
+    """
+    Calculate the truly classical correlations between two qubits.
+    
+    The classical correlations are defined e.g. in Eq. (8) 
+    of Phys. Rev. A 83, 052108 (2011). We use base 2 for log.
+    
+    Args:
+        rho (Array): a two-qubit density operator
+        qubit (int): 0 or 1, the qubit on which the measurement is done (default 0)
         
-        pprob = lambda t, p: gpn(t,p)/(1. + fn(t,p))
-        mprob = lambda t, p: gmn(t,p)/(1. - fn(t,p))
+    Returns:
+        float: classical correlations
+    """
+    assert rho.shape == (4, 4), "Not a two-qubit density matrix"
+    cc = lambda x: quantum_conditional_entropy(rho, x[0], x[1], qubit=qubit)
+    f = minimize(cc, [np.pi/2, np.pi])
+    return (entropy(partial_trace(rho, [qubit])) - f.fun)/np.log(2)
 
-
-        ## Shannon entropy
-        shan_ent = lambda x: - (1. + x)/2. * np.log2((1. + x)/2. + np.isclose(1. + x,0)) \
-                             - (1. - x)/2. * np.log2((1. - x)/2. + np.isclose(1. - x,0))
-
-        ## Conditional entropy 
-        cond_ent = lambda t, p: (1. + fn(t,p)) / 2. * shan_ent(pprob(t, p)) +\
-                                (1. - fn(t,p)) / 2. * shan_ent(mprob(t, p))
-
-        ## VN entropy
-        # Calculate eigenvalues
-        eig = lambda rho: np.linalg.eigvals(rho) 
-        vn_ent = lambda rho: - eig(rho).T @ np.log2(eig(rho) + np.isclose(eig(rho),0))
-        rhoA = partial_trace(rho, [1], dimensions=[2,2]) # get rho_A (trace out B)
-        rhoB = partial_trace(rho, [0], dimensions=[2,2]) # get rho_B (trace out A)
-        
-        ## Define discord and classical correlations
-        if minimize_discord:
-            cond_ent_temp = lambda tp: cond_ent(tp[0], tp[1])
-            cond_ent_temp2 = minimize(cond_ent_temp, ([theta, phi])).fun
-            qdiscord = vn_ent(rhoA) - vn_ent(rho) + cond_ent_temp2
-            classical_corr = vn_ent(rhoB) - cond_ent_temp2
-        else:
-            tp = theta, phi
-            qdiscord = vn_ent(rhoA) - vn_ent(rho) + cond_ent(tp[0], tp[1]) 
-            classical_corr = vn_ent(rhoB) - cond_ent(tp[0], tp[1])             
-        
-        return qdiscord, classical_corr
+def discord(rho, qubit=0):
+    """
+    The quantum discord between two qubits
+    
+    Quantum discord is defined in Phys. Rev. Lett. 88, 017901 (2001). 
+    We use base 2 for log.
+    
+    Args:
+        rho (Array): a two-qubit density operator
+        qubit (int): 0 or 1, the qubit on which the measurement is done (default 0)
+    
+    Return:
+        float: quantum discord, between [0, 1]
+    """
+    return (mutual_information(rho, 2)/np.log(2) - classical_correlation(rho, qubit=qubit))
