@@ -5,6 +5,7 @@ import copy
 import numpy as np
 
 from qiskit import ClassicalRegister, QuantumRegister, QuantumCircuit
+from qiskit.ignis.verification.tomography.basis.circuits import _format_registers
 
 def pairwise_state_tomography_circuits(circuit, measured_qubits):
     """
@@ -26,11 +27,17 @@ def pairwise_state_tomography_circuits(circuit, measured_qubits):
 
     #TODO: measured_qubits should be like in the ignis tomography functions, 
     # i.e. it should be a QuantumRegister or a list of QuantumRegisters
+    if isinstance(measured_qubits, list):
+        # Unroll list of registers
+        meas_qubits = _format_registers(*measured_qubits)
+    else:
+        meas_qubits = _format_registers(measured_qubits)
     
-    ordered_qubit_list = sorted(measured_qubits)
-    N = len(measured_qubits)
+    print(meas_qubits)
+    N = len(meas_qubits)
     
-    cr = ClassicalRegister(len(measured_qubits))
+    cr = ClassicalRegister(len(meas_qubits))
+    print(cr)
     qr = circuit.qregs[0]
     
     ### Uniform measurement settings
@@ -46,17 +53,15 @@ def pairwise_state_tomography_circuits(circuit, measured_qubits):
     Y.name = str(('Y',)*N)
     Z.name = str(('Z',)*N)
 
-    for bit_index in range(len(ordered_qubit_list)):
+    for bit_index, qubit in enumerate(meas_qubits):
 
-        qubit_index = ordered_qubit_list[bit_index]
-
-        X.h(qr[qubit_index])
-        Y.sdg(qr[qubit_index])
-        Y.h(qr[qubit_index])
+        X.h(qubit)
+        Y.sdg(qubit)
+        Y.h(qubit)
         
-        X.measure(qr[qubit_index], cr[bit_index])
-        Y.measure(qr[qubit_index], cr[bit_index])
-        Z.measure(qr[qubit_index], cr[bit_index])
+        X.measure(qubit, cr[bit_index])
+        Y.measure(qubit, cr[bit_index])
+        Z.measure(qubit, cr[bit_index])
     
     output_circuit_list = [X, Y, Z]
     
@@ -77,19 +82,19 @@ def pairwise_state_tomography_circuits(circuit, measured_qubits):
     # Qubit colouring
     nlayers = int(np.ceil(np.log(float(N))/np.log(3.0)))
     pairs = {}
+
     for layout in range(nlayers):
         for sequence in sequences:
             meas_layout = copy.deepcopy(circuit)
             meas_layout.add_register(cr)
             meas_layout.name = ()
-            for bit_index in range(N):
-                qubit_index = ordered_qubit_list[bit_index]
+            for bit_index, qubit in enumerate(meas_qubits):
                 local_basis = sequence[int(float(bit_index)/float(3**layout))%3]
                 if local_basis == 'Y':
-                    meas_layout.sdg(qr[qubit_index])
+                    meas_layout.sdg(qubit)
                 if local_basis != 'Z':
-                    meas_layout.h(qr[qubit_index])
-                meas_layout.measure(qr[qubit_index], cr[bit_index])
+                    meas_layout.h(qubit)
+                meas_layout.measure(qubit, cr[bit_index])
                 meas_layout.name += (local_basis,)
             meas_layout.name = str(meas_layout.name)
             output_circuit_list.append(meas_layout)

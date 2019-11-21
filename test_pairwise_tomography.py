@@ -16,7 +16,6 @@ from qiskit.quantum_info.states import DensityMatrix, Statevector
 @pytest.mark.parametrize("n", range(3,7))
 @pytest.mark.parametrize("nshots", [1000, 5000])
 def test_pairwise_fitter(n, nshots):
-    
     q = QuantumRegister(n)
     qc = QuantumCircuit(q)
 
@@ -29,12 +28,12 @@ def test_pairwise_fitter(n, nshots):
     rho = np.outer(psi.conj().T, psi)
     print("Density matrix evaluated")
 
-    circ = pairwise_state_tomography_circuits(qc, range(n))
+    circ = pairwise_state_tomography_circuits(qc, q)
 
     job = execute(circ, Aer.get_backend("qasm_simulator"), shots=nshots)
     
     print("Simulation done")
-    fitter = PairwiseStateTomographyFitter(job.result(), circ, range(n))
+    fitter = PairwiseStateTomographyFitter(job.result(), circ, q)
 
     np.set_printoptions(suppress=True)
 
@@ -46,4 +45,4 @@ def test_pairwise_fitter(n, nshots):
         trace_qubits.remove(k[1])
         rhok = partial_trace(rho, trace_qubits)
         print(k, 1 - state_fidelity(v, rhok))
-        assert 1 - state_fidelity(v, rhok) < np.sqrt(nshots)
+        assert 1 - state_fidelity(v, rhok) < 1 / np.sqrt(nshots)

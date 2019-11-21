@@ -2,15 +2,12 @@
 Fitter for pairwise state tomography
 """
 
-from qiskit.ignis.verification.tomography import StateTomographyFitter, TomographyFitter
-from qiskit.ignis.verification.tomography.data import marginal_counts
-
 from ast import literal_eval
-from copy import copy, deepcopy
-from qiskit.result import Result
-from qiskit import QuantumCircuit
-
 from itertools import combinations, product
+
+from qiskit.ignis.verification.tomography import StateTomographyFitter
+from qiskit.ignis.verification.tomography.data import marginal_counts
+from qiskit.ignis.verification.tomography.basis.circuits import _format_registers
 
 class PairwiseStateTomographyFitter(StateTomographyFitter):
     """
@@ -31,7 +28,14 @@ class PairwiseStateTomographyFitter(StateTomographyFitter):
         """
         self._circuits = circuits
         self._result = result
-        self._qubit_list = sorted(measured_qubits)
+
+        if isinstance(measured_qubits, list):
+            #Unroll list of registers
+            meas_qubits = _format_registers(*measured_qubits)
+        else:
+            meas_qubits = _format_registers(measured_qubits)
+    
+        self._qubit_list = meas_qubits
 
         self._meas_basis = None
         self._prep_basis = None
@@ -44,19 +48,20 @@ class PairwiseStateTomographyFitter(StateTomographyFitter):
         Reconstruct pairwise quantum states using CVXPY convex optimization.
 
         Args:
-            pairs_list (list): A list of tuples containing the indices of the 
+            pairs_list (list): A list of tuples containing the indices of the
                                qubit pairs for which to perform tomography
-            **kwargs (optional): kwargs for fitter method, 
+            **kwargs (optional): kwargs for fitter method,
             see BaseTomographyFitter
 
         Returns:
-            A dictionary of the form {(i, j): rho(i,j)}, where rho(i,j) is the 
+            A dictionary of the form {(i, j): rho(i,j)}, where rho(i,j) is the
             two-qubit density matrix for qubits i, j
         """
 
         # If no list of pairs provided, then evaluate for all qubit pairs
         if not pairs_list:
-            pairs_list = list(combinations(self._qubit_list, 2))
+            indices = range(len(self._qubit_list))
+            pairs_list = list(combinations(indices, 2))
 
         result = {}
 
