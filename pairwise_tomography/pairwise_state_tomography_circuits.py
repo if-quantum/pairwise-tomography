@@ -17,7 +17,10 @@ def pairwise_state_tomography_circuits(circuit, measured_qubits):
     Args:
         circuit (QuantumCircuit): the state preparation circuit to be
                                   tomographed.
-        measured_qubits (list): list of the indices of qubits to be measured
+        measured_qubits (QuantumRegister): the qubits to be measured.
+            This can also be a list of whole QuantumRegisters or
+            individual QuantumRegister qubit tuples.
+
     Returns:
         A list of QuantumCircuit objects containing the original circuit
         with state tomography measurements appended at the end.
