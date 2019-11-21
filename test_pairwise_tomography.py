@@ -11,39 +11,34 @@ from qiskit.quantum_info import state_fidelity
 from qiskit.tools.qi.qi import partial_trace
 import numpy as np
 
-from qiskit.quantum_info.states import DensityMatrix, Statevector
+from qiskit.quantum_info.states import DensityMatrix
+
+np.set_printoptions(suppress=True)
 
 @pytest.mark.parametrize("n", range(3,7))
 @pytest.mark.parametrize("nshots", [1000, 5000])
 def test_pairwise_fitter(n, nshots):
-    
     q = QuantumRegister(n)
     qc = QuantumCircuit(q)
 
-    psi = np.random.rand(2**n) + 1j * np.random.rand(2**n)
+    psi = ((2 * np.random.rand(2 ** n) - 1) 
+           + 1j * (2 *np.random.rand(2 ** n) - 1))
     psi /= np.linalg.norm(psi)
-
     qc.initialize(psi, q)
-
-    #rho = Statevector.from_instruction(qc).data
-    rho = np.outer(psi.conj().T, psi)
-    print("Density matrix evaluated")
+    rho = DensityMatrix.from_instruction(qc).data
 
     circ = pairwise_state_tomography_circuits(qc, range(n))
-
     job = execute(circ, Aer.get_backend("qasm_simulator"), shots=nshots)
-    
-    print("Simulation done")
     fitter = PairwiseStateTomographyFitter(job.result(), circ, range(n))
-
-    np.set_printoptions(suppress=True)
-
     result = fitter.fit()
     print("Results fit")
+
+    # Compare the tomography matrices with the partial trace of the original 
+    # state.
     for (k, v) in result.items():
         trace_qubits = list(range(n))
         trace_qubits.remove(k[0])
         trace_qubits.remove(k[1])
         rhok = partial_trace(rho, trace_qubits)
         print(k, 1 - state_fidelity(v, rhok))
-        assert 1 - state_fidelity(v, rhok) < np.sqrt(nshots)
+        assert 1 - state_fidelity(v, rhok) < 1 / np.sqrt(nshots)
