@@ -27,9 +27,9 @@ def test_pairwise_fitter(n, nshots):
     qc.initialize(psi, q)
     rho = DensityMatrix.from_instruction(qc).data
 
-    circ = pairwise_state_tomography_circuits(qc, range(n))
+    circ = pairwise_state_tomography_circuits(qc, q)
     job = execute(circ, Aer.get_backend("qasm_simulator"), shots=nshots)
-    fitter = PairwiseStateTomographyFitter(job.result(), circ, range(n))
+    fitter = PairwiseStateTomographyFitter(job.result(), circ, q)
     result = fitter.fit()
     print("Results fit")
 
