@@ -13,7 +13,7 @@ def pairwise_state_tomography_circuits(circuit, measured_qubits):
     """
     Generates a minimal set of circuits for pairwise state tomography.
 
-    This performs measurement in the Pauli-basis resulting in 
+    This performs measurement in the Pauli-basis resulting in
     circuits for an n-qubit state tomography experiment.
 
     Args:
@@ -62,7 +62,7 @@ def pairwise_state_tomography_circuits(circuit, measured_qubits):
         Z.measure(qubit, cr[bit_index])
 
     output_circuit_list = [X, Y, Z]
-    
+
     ### Heterogeneous measurement settings
     # Generation of six possible sequences
     sequences = []
@@ -76,7 +76,7 @@ def pairwise_state_tomography_circuits(circuit, measured_qubits):
             meas_bases_copy.remove(meas_bases_copy[j])
             sequence.append(meas_bases_copy[0])
             sequences.append(sequence)
-    
+
     # Qubit colouring
     nlayers = int(np.ceil(np.log(float(N))/np.log(3.0)))
 
