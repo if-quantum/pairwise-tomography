@@ -5,6 +5,7 @@ Visualization of pairwise relations
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+import itertools
 
 def make_graph(ent_dict, qubit_list):
     G = nx.Graph()
@@ -17,8 +18,12 @@ def make_graph(ent_dict, qubit_list):
                 G.add_edge(qi,qj,weight=ent_dict[(i,j)])
     return G
 
-def draw_entanglement_graph(ent_dict, qubit_list, layout="circular", scale_factor = 1., labels = {}, node_color = "#0A7290", **kwargs):
-    G = make_graph(ent_dict,qubit_list)
+def draw_entanglement_graph(ent_dict, qubit_list=None, layout="circular", scale_factor = 1., labels = {}, node_color = "#0A7290", **kwargs):
+    if not qubit_list:
+        qubit_list = list(set(itertools.chain.from_iterable(ent_dict.keys())))
+    
+    G = make_graph(ent_dict, qubit_list)
+
     valid_layout = {"circular","spring"}
     if layout not in valid_layout:
             raise ValueError("Not a valid layout name (circular,spring).")
