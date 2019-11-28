@@ -24,22 +24,19 @@ def draw_entanglement_graph(ent_dict, qubit_list=None, layout="circular", scale_
     
     G = make_graph(ent_dict, qubit_list)
 
-    valid_layout = {"circular","spring"}
-    if layout not in valid_layout:
-            raise ValueError("Not a valid layout name (circular,spring).")
-    
     if layout == "circular":
         pos = nx.circular_layout(G, dim=2, scale=1, center=None)
-        print(pos)
-        label_pos = [pos[i]*1.3 for i in pos]
-    if layout == "spring":
+    elif layout == "spring":
         pos = nx.spring_layout(G)
-    
+    else:
+        raise ValueError("Not a valid layout name (circular, spring).")
+
+    label_pos = [pos[i]*1.3 for i in pos]    
     
     edgewidth = [d['weight']*10*scale_factor for (u,v,d) in G.edges(data=True)]
     nodesize = [(e[1]*200+10)*scale_factor for e in G.degree(weight='weight')]
     
-    nx.draw_networkx_nodes(G, pos, node_size=nodesize, node_color=node_color, edgecolors="k", linewidths = 0.3, **kwargs)
+    nx.draw_networkx_nodes(G, pos, node_size=nodesize, node_color=node_color, edgecolors="k", linewidths=0.3, **kwargs)
     nx.draw_networkx_edges(G, pos, width=edgewidth, **kwargs)
-    nx.draw_networkx_labels(G, label_pos, labels = labels, font_size = 10, **kwargs)
+    nx.draw_networkx_labels(G, label_pos, labels=labels, font_size=10, **kwargs)
     
