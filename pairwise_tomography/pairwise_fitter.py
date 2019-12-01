@@ -62,11 +62,16 @@ class PairwiseStateTomographyFitter(StateTomographyFitter):
             see BaseTomographyFitter
 
         Returns:
-            A dictionary of the form {(i, j): obj}, where 
+            Tuple (two_qubit, single_qubit), where
+            two_qubit: A dictionary of the form {(i, j): obj}, where 
             obj = rho(i,j) is two-qubit density matrix for qubits i, j if 
             output = 'density_matrix' (default). If output = 'expectation',
             obj = {('X', 'X'): <XX>, ('X', 'Y'): <XY>, ...}, where <.> is the 
             expectation value of the two-qubit operator.
+
+            single_qubit: A dictionary of the form {i: obj} where obj is the
+            density matrix of qubit i if output = 'density_matrix' (default). 
+            If output = 'expectation', obj = {'X': <X>, ...}.
         """
         pairs_list = kwargs.get('pairs_list', None)
 
@@ -79,11 +84,48 @@ class PairwiseStateTomographyFitter(StateTomographyFitter):
 
         for p in pairs_list:
             result[p] = self._fit_ij(*p,
-                                    method=method,
-                                    standard_weights=standard_weights,
-                                    beta=beta,
-                                    **kwargs)
+                                     method=method,
+                                     standard_weights=standard_weights,
+                                     beta=beta,
+                                     **kwargs)
+        result_1q = {}
+        for q in range(len(self._qubit_list)):
+            result_1q[q] = self._fit_1q(q, **kwargs)
 
+        return result, result_1q
+
+    def _fit_1q(self, i, output='density_matrix', **kwargs):
+        # Take the circuits of interest
+        circuits = self._circuits[0:3]
+
+        # This will create an empty _data dict for the fit function
+        # We are using a member field so that  we can use the super() fit 
+        # function
+        self._data = {}
+
+        # Process measurement counts into probabilities
+        for circ in circuits:
+            # Take only the relevant qubit labels from the circuit label
+            tup = literal_eval(circ.name)
+            tup = (tup[i])
+
+            # Marginalize the counts for the two relevant qubits
+            counts = marginal_counts(self._result.get_counts(circ), [i])
+
+            # Populate the data
+            self._data[tup] = counts
+
+        if output == 'density_matrix':
+            # Do the actual fit using StateTomographyFitter base method
+            result = super().fit(**kwargs)
+        elif output == 'expectation':
+            # Return the expectation values
+            result = self._evaluate_expectation_1q()
+        else:
+            raise ValueError("Output must be either 'density_matrix' or 'expectation'")
+
+        # clear the _data field
+        self._data = None
         return result
 
     def _fit_ij(self, i, j, output='density_matrix', **kwargs):
@@ -165,6 +207,25 @@ class PairwiseStateTomographyFitter(StateTomographyFitter):
                 result[key] = average_data(self._data[(key[0], 'Z')], _OBSERVABLE_FIRST)
             else:
                 result[key] = average_data(self._data[key], _OBSERVABLE_CORRELATED)
+
+        return result
+
+
+    def _evaluate_expectation_1q(self):
+        """
+        Utility function for evaluating expectation value of two-qubit Pauli
+        measurements.
+
+        Returns:
+            A dict where keys are pairs of Pauli operators, e.g. ('X', 'Z') 
+            or ('I', 'X'), and values are the expectation values.
+        """
+
+        paulis = ['X', 'Y', 'Z']
+
+        result = {}
+        for key in paulis:
+            result[key] = average_data(self._data[key], [1, -1])
 
         return result
 
