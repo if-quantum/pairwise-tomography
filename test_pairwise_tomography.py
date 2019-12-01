@@ -45,8 +45,8 @@ class TestPairwiseStateTomography(unittest.TestCase):
         circ = pairwise_state_tomography_circuits(qc, q)
         job = execute(circ, Aer.get_backend("qasm_simulator"), shots=nshots)
         fitter = PairwiseStateTomographyFitter(job.result(), circ, q)
-        result = fitter.fit()
-        result_exp = fitter.fit(output='expectation')
+        result = fitter.fit()[0]
+        result_exp = fitter.fit(output='expectation')[0]
 
         # Compare the tomography matrices with the partial trace of 
         # the original state using fidelity
@@ -103,8 +103,8 @@ class TestPairwiseStateTomography(unittest.TestCase):
         circ = pairwise_state_tomography_circuits(qc, measured_qubits)
         job = execute(circ, Aer.get_backend("qasm_simulator"), shots=nshots)
         fitter = PairwiseStateTomographyFitter(job.result(), circ, measured_qubits)
-        result = fitter.fit()
-        result_exp = fitter.fit(output='expectation')
+        result = fitter.fit()[0]
+        result_exp = fitter.fit(output='expectation')[0]
 
         # Compare the tomography matrices with the partial trace of 
         # the original state using fidelity
@@ -145,8 +145,8 @@ class TestPairwiseStateTomography(unittest.TestCase):
         circ = pairwise_state_tomography_circuits(qc, measured_qubits)
         job = execute(circ, Aer.get_backend("qasm_simulator"), shots=nshots)
         fitter = PairwiseStateTomographyFitter(job.result(), circ, measured_qubits)
-        result = fitter.fit()
-        result_exp = fitter.fit(output='expectation')
+        result = fitter.fit()[0]
+        result_exp = fitter.fit(output='expectation')[0]
 
         # Compare the tomography matrices with the partial trace of
         # the original state using fidelity
