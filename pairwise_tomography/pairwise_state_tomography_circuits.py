@@ -2,8 +2,6 @@
 Pairwise tomography circuit generation
 """
 # pylint: disable=invalid-name
-
-import copy
 import numpy as np
 
 from qiskit import ClassicalRegister
@@ -40,17 +38,13 @@ def pairwise_state_tomography_circuits(circuit, measured_qubits):
     cr = ClassicalRegister(len(meas_qubits))
 
     ### Uniform measurement settings
-    X = copy.deepcopy(circuit)
-    Y = copy.deepcopy(circuit)
-    Z = copy.deepcopy(circuit)
+    X = circuit.copy(name=str(('X',)*N))
+    Y = circuit.copy(name=str(('Y',)*N))
+    Z = circuit.copy(name=str(('Z',)*N))
 
     X.add_register(cr)
     Y.add_register(cr)
     Z.add_register(cr)
-
-    X.name = str(('X',)*N)
-    Y.name = str(('Y',)*N)
-    Z.name = str(('Z',)*N)
 
     for bit_index, qubit in enumerate(meas_qubits):
         X.h(qubit)
@@ -82,7 +76,7 @@ def pairwise_state_tomography_circuits(circuit, measured_qubits):
 
     for layout in range(nlayers):
         for sequence in sequences:
-            meas_layout = copy.deepcopy(circuit)
+            meas_layout = circuit.copy()
             meas_layout.add_register(cr)
             meas_layout.name = ()
             for bit_index, qubit in enumerate(meas_qubits):
