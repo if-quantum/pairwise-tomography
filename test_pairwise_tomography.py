@@ -75,13 +75,19 @@ class TestPairwiseStateTomography(unittest.TestCase):
             raise
 
     def check_pauli_expectaion(self, item, rho):
+        
         for (a, b) in itertools.product(pauli.keys(), pauli.keys()):
             if not (a == "I" and b == "I"):
                 correct = pauli_expectation(rho, a, b)
                 tomo = item[(a, b)]
-                delta = np.sqrt(16 * (1 - correct ** 2) / nshots)
+                
+                # The variance on the expectation values
+                sigma = np.sqrt((1 - correct ** 2) / nshots)
+        
                 try:
-                    self.assertAlmostEqual(tomo, correct, delta=delta)
+                    # A delta of 4*sigma should guarantee that 99.98% of results
+                    # are within bounds
+                    self.assertAlmostEqual(tomo, correct, delta=4*sigma)
                 except AssertionError:
                     print(a, b, correct, tomo)
                     raise
