@@ -6,7 +6,8 @@ import numpy as np
 import scipy.linalg as la
 from scipy.optimize import minimize
 #from scipy.special import xlogy
-from qiskit.quantum_info import outer, partial_trace, entropy, mutual_information
+from qiskit.quantum_info import partial_trace, entropy, mutual_information
+from qiskit.tools import outer
 
 def concurrence(state):
     """Calculate the concurrence.
