@@ -7,13 +7,13 @@ import numpy as np
 
 from qiskit import QuantumRegister, QuantumCircuit, execute, Aer
 from qiskit.quantum_info import state_fidelity
-from qiskit.tools.qi.qi import partial_trace
+from qiskit.quantum_info import partial_trace
 from qiskit.quantum_info.states import DensityMatrix
 
 from pairwise_tomography.pairwise_state_tomography_circuits import pairwise_state_tomography_circuits
 from pairwise_tomography.pairwise_fitter import PairwiseStateTomographyFitter
 
-n_list = [2, 4]
+n_list = [3, 4]
 nshots = 5000
 
 pauli = {'I': np.eye(2),
@@ -35,7 +35,7 @@ class TestPairwiseStateTomography(unittest.TestCase):
         q = QuantumRegister(n)
         qc = QuantumCircuit(q)
 
-        psi = ((2 * np.random.rand(2 ** n) - 1) 
+        psi = ((2 * np.random.rand(2 ** n) - 1)
                + 1j * (2 *np.random.rand(2 ** n) - 1))
         psi /= np.linalg.norm(psi)
 
@@ -48,13 +48,13 @@ class TestPairwiseStateTomography(unittest.TestCase):
         result = fitter.fit()
         result_exp = fitter.fit(output='expectation')
 
-        # Compare the tomography matrices with the partial trace of 
+        # Compare the tomography matrices with the partial trace of
         # the original state using fidelity
         for (k, v) in result.items():
             trace_qubits = list(range(n))
             trace_qubits.remove(k[0])
             trace_qubits.remove(k[1])
-            rhok = partial_trace(rho, trace_qubits)
+            rhok = partial_trace(rho, trace_qubits).data
             try:
                 self.check_density_matrix(v, rhok)
             except:
@@ -65,7 +65,7 @@ class TestPairwiseStateTomography(unittest.TestCase):
             except:
                 print("Problem with expectation values:", k)
                 raise
-    
+
     def check_density_matrix(self, item, rho):
         fidelity = state_fidelity(item, rho)
         try:
@@ -75,15 +75,15 @@ class TestPairwiseStateTomography(unittest.TestCase):
             raise
 
     def check_pauli_expectaion(self, item, rho):
-        
+
         for (a, b) in itertools.product(pauli.keys(), pauli.keys()):
             if not (a == "I" and b == "I"):
                 correct = pauli_expectation(rho, a, b)
                 tomo = item[(a, b)]
-                
+
                 # The variance on the expectation values
                 sigma = np.sqrt((1 - correct ** 2) / nshots)
-        
+
                 try:
                     # A delta of 4*sigma should guarantee that 99.98% of results
                     # are within bounds
@@ -91,14 +91,14 @@ class TestPairwiseStateTomography(unittest.TestCase):
                 except AssertionError:
                     print(a, b, correct, tomo)
                     raise
-                
+
     def test_meas_qubit_specification(self):
         n = 4
 
         q = QuantumRegister(n)
         qc = QuantumCircuit(q)
 
-        psi = ((2 * np.random.rand(2 ** n) - 1) 
+        psi = ((2 * np.random.rand(2 ** n) - 1)
             + 1j * (2 *np.random.rand(2 ** n) - 1))
         psi /= np.linalg.norm(psi)
 
@@ -112,15 +112,16 @@ class TestPairwiseStateTomography(unittest.TestCase):
         result = fitter.fit()
         result_exp = fitter.fit(output='expectation')
 
-        # Compare the tomography matrices with the partial trace of 
+        # Compare the tomography matrices with the partial trace of
         # the original state using fidelity
         for (k, v) in result.items():
-            #TODO: This method won't work if measured_qubits is not ordered in 
+            #TODO: This method won't work if measured_qubits is not ordered in
             # wrt the DensityMatrix object.
             trace_qubits = list(range(n))
             trace_qubits.remove(measured_qubits[k[0]].index)
             trace_qubits.remove(measured_qubits[k[1]].index)
-            rhok = partial_trace(rho, trace_qubits)
+            print(trace_qubits, rho.shape)
+            rhok = partial_trace(rho, trace_qubits).data
             try:
                 self.check_density_matrix(v, rhok)
             except:
@@ -139,7 +140,7 @@ class TestPairwiseStateTomography(unittest.TestCase):
         p = QuantumRegister(n / 2)
 
         qc = QuantumCircuit(q, p)
-        
+
         qc.h(q[0])
         qc.rx(np.pi/4, q[1])
         qc.cx(q[0], p[0])
@@ -160,7 +161,7 @@ class TestPairwiseStateTomography(unittest.TestCase):
             trace_qubits = list(range(n))
             trace_qubits.remove(measured_qubits[k[0]].index)
             trace_qubits.remove(measured_qubits[k[1]].index)
-            rhok = partial_trace(rho, trace_qubits)
+            rhok = partial_trace(rho, trace_qubits).data
             try:
                 self.check_density_matrix(v, rhok)
             except:
