@@ -49,7 +49,7 @@ class PairwiseStateTomographyFitter(StateTomographyFitter):
         super().set_preparation_basis("Pauli")
         self._data = {}
 
-    def fit(self, method='auto', standard_weights=True, beta=0.5, **kwargs):
+    def fit(self, method='auto', standard_weights=True, beta=0.5, pairs_list=None, **kwargs):
         """
         Reconstruct pairwise quantum states using CVXPY convex optimization.
 
@@ -68,8 +68,6 @@ class PairwiseStateTomographyFitter(StateTomographyFitter):
             obj = {('X', 'X'): <XX>, ('X', 'Y'): <XY>, ...}, where <.> is the 
             expectation value of the two-qubit operator.
         """
-        pairs_list = kwargs.get('pairs_list', None)
-
         # If no list of pairs provided, then evaluate for all qubit pairs
         if not pairs_list:
             indices = range(len(self._qubit_list))
