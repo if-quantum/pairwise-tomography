@@ -1,4 +1,4 @@
-qiskit>=0.19
+qiskit<0.19.5
 networkx
 matplotlib
 scipy
